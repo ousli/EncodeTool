@@ -2,7 +2,10 @@
 
 **EncodeTool** is a blazing fast and aesthetic CLI (Command Line Interface) utility to automate batch video processing on macOS. It is designed to simplify the workflow of content creators by handling renaming, encoding, and color grading in a single command.
 
-![Terminal UI](image.png)
+<div style="display: flex; justify-content: center; align-items: flex-start; gap: 10px;">
+  <img src="image.png" alt="Terminal UI" style="max-width: 48%;">
+  <img src="image2.png" alt="Additional UI Screenshot" style="max-width: 48%;">
+</div>
 
 ## ✨ Features
 
