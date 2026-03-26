@@ -2,11 +2,6 @@
 
 **EncodeTool** is a blazing fast and aesthetic CLI (Command Line Interface) utility to automate batch video processing on macOS. Rewritten in **Rust**, it is designed to simplify the workflow of content creators by handling renaming, encoding, and color grading with high performance and reliability.
 
-<div style="display: flex; justify-content: center; align-items: flex-start; gap: 10px;">
-  <img src="image.png" alt="Terminal UI" style="max-width: 48%;">
-  <img src="image2.png" alt="Additional UI Screenshot" style="max-width: 48%;">
-</div>
-
 ## ✨ Features
 
 *   **⚡️ H.265 10-bit Encoding**: Mass conversion to HEVC (Main10) codec using Apple Silicon hardware acceleration (`hevc_videotoolbox`).
