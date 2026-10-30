@@ -123,11 +123,7 @@ fn tail(text: &str, max: usize) -> String {
 
 /// Output file name for a video (without directory).
 pub fn output_name(kind: Kind, stem: &str, date_prefix: &str, lut_name: Option<&str>) -> String {
-    let lut_part = lut_name.map(|name| {
-        let profile: String = name.chars().map(|c| if c.is_alphanumeric() || c == '-' || c == '_' { c } else { '-' }).collect();
-        format!("_{profile}_lutted")
-    });
-    let lut_part = lut_part.unwrap_or_default();
+    let lut_part = if lut_name.is_some() { "_lutted" } else { "" };
     match kind {
         Kind::RenameEncode if !has_date_prefix(stem) => format!("{date_prefix}_{stem}{lut_part}.mov"),
         _ => format!("{stem}{lut_part}.mov"),
@@ -566,8 +562,8 @@ mod tests {
         assert_eq!(output_name(Kind::RenameEncode, "2026-04-15_2107_C1", "2026-05-01_1000", None), "2026-04-15_2107_C1.mov");
         assert_eq!(output_name(Kind::Encode, "clip", "", None), "clip.mov");
         assert_eq!(output_name(Kind::RenameEncode, "clip", "2024-01-02_1030", None), "2024-01-02_1030_clip.mov");
-        assert_eq!(output_name(Kind::Lut, "clip", "", Some("S-Log 2")), "clip_S-Log-2_lutted.mov");
-        assert_eq!(output_name(Kind::RenameEncode, "clip", "2024-01-02_1030", Some("S-Log2")), "2024-01-02_1030_clip_S-Log2_lutted.mov");
-        assert_eq!(output_name(Kind::Encode, "clip", "", Some("S-Log2")), "clip_S-Log2_lutted.mov");
+        assert_eq!(output_name(Kind::Lut, "clip", "", Some("S-Log 2")), "clip_lutted.mov");
+        assert_eq!(output_name(Kind::RenameEncode, "clip", "2024-01-02_1030", Some("S-Log2")), "2024-01-02_1030_clip_lutted.mov");
+        assert_eq!(output_name(Kind::Encode, "clip", "", Some("S-Log2")), "clip_lutted.mov");
     }
 }
