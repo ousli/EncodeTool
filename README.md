@@ -15,6 +15,12 @@ A single Rust binary runs a small server on `127.0.0.1` and serves the web inter
 - **🗂 History** of past tasks (kept between launches) and original creation/modification dates preserved on outputs.
 - **📁 Folder selection**: built-in browser, paste/drop a path, or the native macOS dialog.
 
+## 📸 Screenshots
+
+| New task | Live progress (dark, turquoise accent) |
+|---|---|
+| ![New task](docs/new-task.png) | ![Live progress](docs/dark.png) |
+
 ## 🛠 Prerequisites
 
 - macOS (Apple Silicon recommended).
@@ -37,12 +43,3 @@ cargo test                          # backend unit tests
 cargo run -- --no-open              # API server on :7878
 cd web && npm install && npm run dev  # UI with hot reload (proxies /api to :7878)
 ```
-
-## 🗃 Legacy script
-
-The original terminal tool, `EncodeTool.sh` (zsh), is still available. Edit the `LUT_SLOG2`, `LUT_SLOG3` and `LUT_DLOGM` variables (e.g. `LUT_SLOG2="/path/to/your/S-Log2.cube"`) to use the LUT action, then run `./EncodeTool.sh`.
-
-<div style="display: flex; justify-content: center; align-items: flex-start; gap: 10px;">
-  <img src="image.png" alt="Terminal UI" style="max-width: 48%;">
-  <img src="image2.png" alt="Additional UI Screenshot" style="max-width: 48%;">
-</div>
