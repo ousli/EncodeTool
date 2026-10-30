@@ -10,6 +10,7 @@ A single Rust binary runs a small server on `127.0.0.1` and serves the web inter
 - **🎨 3D LUT**: an option of the *Re-encode* task (S-Log2 / S-Log3 / D-Log M or any `.cube`), combinable with *Rename with date* and *Keep metadata*. LUTs are managed from the interface.
 - **📅 Smart renaming**: prefixes files with their date (`YYYY-MM-DD_HHMM_`), also available combined with encoding.
 - **📊 Live task queue**: per-file and global progress, ETA, FPS, bitrate; video preview of the current file (with a left-to-right before/after wipe when applying a LUT); pause, resume and cancel.
+- **🌗 Appearance**: light/dark mode (follows the system by default) and 8 accent colours, remembered in the browser.
 - **🏷 Metadata**: EXIF/GPS/date tags are kept by default; one switch strips them from the exported videos.
 - **🗂 History** of past tasks (kept between launches) and original creation/modification dates preserved on outputs.
 - **📁 Folder selection**: built-in browser, paste/drop a path, or the native macOS dialog.

@@ -7,6 +7,7 @@
   import Luts from './lib/Luts.svelte';
   import Icon from './lib/Icon.svelte';
   import Snackbar from './lib/Snackbar.svelte';
+  import Appearance from './lib/Appearance.svelte';
 
   let tab = $state('new');
   onMount(start);
@@ -60,6 +61,7 @@
   </main>
 </div>
 
+<Appearance />
 <Snackbar />
 
 <style>
@@ -105,7 +107,7 @@
   }
   .pill.selected { background: var(--md-secondary-container); color: var(--md-on-secondary-container); }
   .pill :global(svg) { width: 24px; height: 24px; }
-  .label.em { font-weight: 700; color: var(--md-secondary); }
+  .label.em { font-weight: 700; color: var(--md-on-surface); }
   .badge {
     position: absolute;
     top: 0;
