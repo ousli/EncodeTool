@@ -9,23 +9,24 @@
 
 ## ✨ Features
 
-*   **⚡️ H.265 10-bit Encoding**: Mass conversion to HEVC (Main10) codec using Apple Silicon hardware acceleration (VideoToolbox).
-*   **🎨 3D LUT Application**: Native support for converting LOG profiles (e.g., S-Log2) to Rec.709 directly integrated into the encoding pipeline.
-*   **📅 Smart Renaming**: Automatically adds the original creation date (metadata) to the filename for perfect chronological sorting.
-*   **📊 "Premium" UI**:
-    *   Smooth progress bar for the current file (with ETA, FPS, Bitrate).
-    *   Persistent global progress bar for batch tracking.
-    *   Automatic terminal cleanup ("Collapsing" display) for a clean history.
+- **⚡️ H.265 10-bit Encoding**: Mass conversion to HEVC (Main10) codec using Apple Silicon hardware acceleration (VideoToolbox).
+- **🎨 3D LUT Application**: Native support for converting LOG profiles (e.g., S-Log2) to Rec.709 directly integrated into the encoding pipeline.
+- **📅 Smart Renaming**: Automatically adds the original creation date (metadata) to the filename for perfect chronological sorting.
+- **📊 "Premium" UI**:
+  - Smooth progress bar for the current file (with ETA, FPS, Bitrate).
+  - Persistent global progress bar for batch tracking.
+  - Automatic terminal cleanup ("Collapsing" display) for a clean history.
 
 ## 🛠 Prerequisites
 
-*   macOS (Optimized for Apple Silicon M1/M2/M3).
-*   `ffmpeg` with `hevc_videotoolbox` support.
-*   `zsh` (Default shell on macOS).
+- macOS (Optimized for Apple Silicon M1/M2/M3).
+- `ffmpeg` with `hevc_videotoolbox` support.
+- `zsh` (Default shell on macOS).
 
 ## ⚙️ Configuration
 
 Before using the **Apply LUT** feature, you **MUST** edit the `EncodeTool.sh` file:
+
 1.  Open `EncodeTool.sh` in a text editor.
 2.  Locate the three variables `LUT_SLOG2`, `LUT_SLOG3` and `LUT_DLOGM` (e.g. `LUT_SLOG2="/path/to/your/S-Log2.cube"`).
 3.  Replace each placeholder with the absolute path to the matching `.cube` LUT file.
@@ -43,19 +44,6 @@ Optionally, set `SOURCE_DIR` / `EXPORT_DIR` to skip the folder prompts.
     ./EncodeTool.sh
     ```
 3.  Follow the interactive interface:
-    *   Drag and drop your source folder.
-    *   Choose an action (Rename, Reencode, Rename & Reencode, Apply LUT for S-Log2 / S-Log3 / DJI D-Log M).
-    *   Enjoy the magic.
-
-## 🧠 "Vibecoding" & Philosophy
-
-This project was built using **Vibecoding**.
-
-> **What is Vibecoding?**
-> It's a modern development approach where the coder "pair-programs" with an advanced AI in real-time. The focus is not on laborious syntax, but on intent, "flow" (the vibe), and rapid feature validation.
-
-*   **Speed**: From idea to production in record time.
-*   **Design**: AI generated the terminal GUI concepts (colors, layout) for an immediate "Premium" look.
-*   **Robustness**: Code (especially complex math calculations in `awk` for the progress bar) was generated, tested, and bulletproofed against crashes through rapid iterations.
-
-*Developed with ❤️ by Si0ul.*
+    - Drag and drop your source folder.
+    - Choose an action (Rename, Reencode, Rename & Reencode, Apply LUT for S-Log2 / S-Log3 / DJI D-Log M).
+    - Enjoy the magic.
