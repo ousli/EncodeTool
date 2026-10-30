@@ -129,9 +129,20 @@ pub fn output_name(kind: Kind, stem: &str, date_prefix: &str, lut_name: Option<&
     });
     let lut_part = lut_part.unwrap_or_default();
     match kind {
-        Kind::RenameEncode => format!("{date_prefix}_{stem}{lut_part}.mov"),
+        Kind::RenameEncode if !has_date_prefix(stem) => format!("{date_prefix}_{stem}{lut_part}.mov"),
         _ => format!("{stem}{lut_part}.mov"),
     }
+}
+
+/// True when the name already starts with `YYYY-MM-DD_HHMM_`.
+fn has_date_prefix(stem: &str) -> bool {
+    let b = stem.as_bytes();
+    b.len() > 16
+        && b[..16].iter().enumerate().all(|(i, c)| match i {
+            4 | 7 => *c == b'-',
+            10 | 15 => *c == b'_',
+            _ => c.is_ascii_digit(),
+        })
 }
 
 impl Manager {
@@ -552,6 +563,7 @@ mod tests {
 
     #[test]
     fn names_outputs() {
+        assert_eq!(output_name(Kind::RenameEncode, "2026-04-15_2107_C1", "2026-05-01_1000", None), "2026-04-15_2107_C1.mov");
         assert_eq!(output_name(Kind::Encode, "clip", "", None), "clip.mov");
         assert_eq!(output_name(Kind::RenameEncode, "clip", "2024-01-02_1030", None), "2024-01-02_1030_clip.mov");
         assert_eq!(output_name(Kind::Lut, "clip", "", Some("S-Log 2")), "clip_S-Log-2_lutted.mov");
