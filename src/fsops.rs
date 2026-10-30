@@ -97,11 +97,12 @@ pub struct Browse {
     pub path: String,
     pub parent: Option<String>,
     pub dirs: Vec<DirEntry>,
+    pub files: Vec<DirEntry>,
     pub video_count: usize,
     pub shortcuts: Vec<DirEntry>,
 }
 
-pub fn browse(raw: &str, show_hidden: bool) -> Result<Browse, String> {
+pub fn browse(raw: &str, show_hidden: bool, ext: Option<&str>) -> Result<Browse, String> {
     let cleaned = clean_path(raw);
     let dir = if cleaned.is_empty() { PathBuf::from(home()) } else { PathBuf::from(cleaned) };
     if !dir.is_dir() {
@@ -117,6 +118,20 @@ pub fn browse(raw: &str, show_hidden: bool) -> Result<Browse, String> {
         })
         .collect();
     dirs.sort_by_key(|d| d.name.to_lowercase());
+    let mut files: Vec<DirEntry> = match ext {
+        Some(ext) => fs::read_dir(&dir)
+            .map_err(|e| e.to_string())?
+            .filter_map(|e| e.ok())
+            .filter(|e| e.path().is_file())
+            .filter(|e| e.path().extension().is_some_and(|x| x.eq_ignore_ascii_case(ext)))
+            .filter_map(|e| {
+                let name = e.file_name().to_string_lossy().into_owned();
+                (show_hidden || !name.starts_with('.')).then(|| DirEntry { path: e.path().to_string_lossy().into_owned(), name })
+            })
+            .collect(),
+        None => Vec::new(),
+    };
+    files.sort_by_key(|d| d.name.to_lowercase());
     let home = home();
     let shortcuts = [("Accueil", home.clone()), ("Bureau", format!("{home}/Desktop")), ("Films", format!("{home}/Movies")), ("Volumes", "/Volumes".into())]
         .into_iter()
@@ -128,14 +143,20 @@ pub fn browse(raw: &str, show_hidden: bool) -> Result<Browse, String> {
         parent: dir.parent().map(|p| p.to_string_lossy().into_owned()),
         video_count: list_videos(&dir).map(|v| v.len()).unwrap_or(0),
         dirs,
+        files,
         shortcuts,
     })
 }
 
 /// Native macOS folder dialog. Returns None when the user cancels.
-pub async fn pick_folder() -> Result<Option<String>, String> {
+pub async fn pick_folder(file: bool) -> Result<Option<String>, String> {
+    let script = if file {
+        "POSIX path of (choose file with prompt \"Choisir un fichier .cube\")"
+    } else {
+        "POSIX path of (choose folder with prompt \"Choisir un dossier\")"
+    };
     let out = Command::new("osascript")
-        .args(["-e", "POSIX path of (choose folder with prompt \"Choisir un dossier\")"])
+        .args(["-e", script])
         .output()
         .await
         .map_err(|e| format!("osascript indisponible : {e}"))?;

@@ -4,14 +4,14 @@
   import Dialog from './Dialog.svelte';
   import { notify } from './store.svelte.js';
 
-  let { label, value = $bindable(''), placeholder = '' } = $props();
+  let { label, value = $bindable(''), placeholder = '', ext = '' } = $props();
   let open = $state(false);
   let browse = $state(null);
   let error = $state('');
 
   async function load(path) {
     try {
-      browse = await api.get(`/api/fs/browse?path=${encodeURIComponent(path ?? '')}`);
+      browse = await api.get(`/api/fs/browse?path=${encodeURIComponent(path ?? '')}${ext ? `&ext=${ext}` : ''}`);
       error = '';
     } catch (e) {
       error = e.message;
@@ -20,7 +20,7 @@
 
   function openBrowser() {
     open = true;
-    load(value);
+    load(ext ? value.replace(/\/[^/]*$/, '') : value);
   }
 
   function choose() {
@@ -30,7 +30,7 @@
 
   async function pickNative() {
     try {
-      const { path } = await api.post('/api/fs/pick');
+      const { path } = await api.post(`/api/fs/pick${ext ? '?file=true' : ''}`);
       if (path) value = path;
     } catch (e) {
       notify(e.message);
@@ -42,14 +42,14 @@
   <label class="tf trailing" class:filled={value}>
     <input bind:value {placeholder} spellcheck="false" />
     <span class="body-m">{label}</span>
-    <button type="button" class="icon-btn trail" aria-label="Parcourir les dossiers" onclick={openBrowser}>
-      <Icon name="folder_open" />
+    <button type="button" class="icon-btn trail" aria-label={ext ? 'Parcourir les fichiers' : 'Parcourir les dossiers'} onclick={openBrowser}>
+      <Icon name={ext ? 'tune' : 'folder_open'} />
     </button>
   </label>
-  <div class="row"><button type="button" class="btn text" onclick={pickNative}>Choisir avec le Finder</button></div>
+  <div class="row"><button type="button" class="btn text" onclick={pickNative}>{ext ? 'Choisir un fichier avec le Finder' : 'Choisir avec le Finder'}</button></div>
 </div>
 
-<Dialog bind:open title="Choisir un dossier">
+<Dialog bind:open title={ext ? 'Choisir un fichier' : 'Choisir un dossier'}>
   {#if browse}
     <div class="stack loose">
       <div class="row wrap">
@@ -75,16 +75,24 @@
             </button>
           </li>
         {:else}
-          <li class="list-item"><span class="content body-m variant">Aucun sous-dossier</span></li>
+          {#if !browse.files.length}<li class="list-item"><span class="content body-m variant">Aucun sous-dossier</span></li>{/if}
+        {/each}
+        {#each browse.files as f (f.path)}
+          <li>
+            <button type="button" class="list-item action" onclick={() => { value = f.path; open = false; }}>
+              <span class="lead"><Icon name="tune" /></span>
+              <span class="content body-l">{f.name}</span>
+            </button>
+          </li>
         {/each}
       </ul>
-      <p class="body-s variant">{browse.video_count} vidéo(s) dans ce dossier</p>
+      {#if !ext}<p class="body-s variant">{browse.video_count} vidéo(s) dans ce dossier</p>{/if}
     </div>
   {/if}
   {#if error}<p class="support err body-s">{error}</p>{/if}
   {#snippet actions()}
     <button type="button" class="btn text" onclick={() => (open = false)}>Annuler</button>
-    <button type="button" class="btn text" disabled={!browse} onclick={choose}>Choisir</button>
+    {#if !ext}<button type="button" class="btn text" disabled={!browse} onclick={choose}>Choisir</button>{/if}
   {/snippet}
 </Dialog>
 

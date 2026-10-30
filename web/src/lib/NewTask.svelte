@@ -5,14 +5,11 @@
   import Icon from './Icon.svelte';
 
   let { onsubmitted } = $props();
-  let kind = $state('encode');
-  let source = $state('');
-  let exportDir = $state('');
-  let lutId = $state('');
+  const form = store.form;
   let busy = $state(false);
 
   const icons = { rename: 'edit', encode: 'movie', rename_encode: 'check', lut: 'tune' };
-  const needsExport = $derived(kind !== 'rename');
+  const needsExport = $derived(form.kind !== 'rename');
   const descriptions = {
     rename: 'Ajoute la date de création (AAAA-MM-JJ_HHMM_) au début du nom des fichiers.',
     encode: 'Encode en H.265 10-bit (VideoToolbox) vers des fichiers .mov.',
@@ -25,10 +22,10 @@
     busy = true;
     try {
       await api.post('/api/jobs', {
-        kind,
-        source,
-        export: needsExport && exportDir ? exportDir : null,
-        lut_id: kind === 'lut' ? Number(lutId) || null : null,
+        kind: form.kind,
+        source: form.source,
+        export: needsExport && form.exportDir ? form.exportDir : null,
+        lut_id: form.kind === 'lut' ? Number(form.lutId) || null : null,
       });
       notify('Tâche ajoutée à la file');
       onsubmitted?.();
@@ -46,24 +43,24 @@
   <div class="stack">
     <div class="seg-group" role="radiogroup" aria-label="Type de tâche">
       {#each Object.entries(KINDS) as [id, label]}
-        <button type="button" role="radio" aria-checked={kind === id} class="seg" class:selected={kind === id} onclick={() => (kind = id)}>
-          {#if kind === id}<Icon name="check" />{:else}<Icon name={icons[id]} />{/if}
+        <button type="button" role="radio" aria-checked={form.kind === id} class="seg" class:selected={form.kind === id} onclick={() => (form.kind = id)}>
+          {#if form.kind === id}<Icon name="check" />{:else}<Icon name={icons[id]} />{/if}
           {label}
         </button>
       {/each}
     </div>
-    <p class="body-m variant">{descriptions[kind]}</p>
+    <p class="body-m variant">{descriptions[form.kind]}</p>
   </div>
 
   <div class="card low stack loose">
-    <FolderField label="Dossier source" bind:value={source} placeholder="/Users/…/Rushes" />
+    <FolderField label="Dossier source" bind:value={form.source} placeholder="/Users/…/Rushes" />
     {#if needsExport}
-      <FolderField label="Dossier d'export" bind:value={exportDir} placeholder="vide = source/export" />
+      <FolderField label="Dossier d'export" bind:value={form.exportDir} placeholder="vide = source/export" />
     {/if}
-    {#if kind === 'lut'}
+    {#if form.kind === 'lut'}
       <div>
         <label class="tf select filled">
-          <select bind:value={lutId}>
+          <select bind:value={form.lutId}>
             <option value="">Choisir…</option>
             {#each store.luts as lut}<option value={lut.id}>{lut.name}</option>{/each}
           </select>
@@ -76,7 +73,7 @@
 
   <div class="row">
     <span class="spacer"></span>
-    <button class="btn filled icon-lead" disabled={busy || !source || (kind === 'lut' && !lutId)}>
+    <button class="btn filled icon-lead" disabled={busy || !form.source || (form.kind === 'lut' && !form.lutId)}>
       <Icon name="play" /> Lancer
     </button>
   </div>

@@ -2,15 +2,15 @@
   import { api } from './api.js';
   import { store, refreshLuts, notify } from './store.svelte.js';
   import Icon from './Icon.svelte';
+  import FolderField from './FolderField.svelte';
 
-  let name = $state('');
-  let path = $state('');
+  const f = store.lutForm;
 
   async function add(e) {
     e.preventDefault();
     try {
-      await api.post('/api/luts', { name, path });
-      name = path = '';
+      await api.post('/api/luts', { name: f.name, path: f.path });
+      f.name = f.path = '';
       await refreshLuts();
       notify('LUT ajoutée');
     } catch (err) {
@@ -34,17 +34,14 @@
 
   <form class="card low stack loose" onsubmit={add}>
     <h2 class="title-m-em">Ajouter une LUT</h2>
-    <label class="tf" class:filled={name}>
-      <input bind:value={name} placeholder="ex. S-Log2" />
+    <label class="tf" class:filled={f.name}>
+      <input bind:value={f.name} placeholder="ex. S-Log2" />
       <span class="body-m">Nom</span>
     </label>
-    <label class="tf" class:filled={path}>
-      <input bind:value={path} placeholder="/chemin/vers/fichier.cube" spellcheck="false" />
-      <span class="body-m">Chemin du fichier .cube</span>
-    </label>
+    <FolderField label="Fichier .cube" bind:value={f.path} placeholder="/chemin/vers/fichier.cube" ext="cube" />
     <div class="row">
       <span class="spacer"></span>
-      <button class="btn filled icon-lead" disabled={!name || !path}><Icon name="add" />Ajouter</button>
+      <button class="btn filled icon-lead" disabled={!f.name || !f.path}><Icon name="add" />Ajouter</button>
     </div>
   </form>
 

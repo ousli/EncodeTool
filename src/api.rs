@@ -220,14 +220,20 @@ async fn delete_lut(State(s): State<AppState>, Path(id): Path<i64>) -> ApiResult
 struct BrowseQuery {
     path: Option<String>,
     hidden: Option<bool>,
+    ext: Option<String>,
 }
 
 async fn browse(Query(q): Query<BrowseQuery>) -> ApiResult<fsops::Browse> {
-    fsops::browse(q.path.as_deref().unwrap_or(""), q.hidden.unwrap_or(false)).map(Json).map_err(ApiError::bad)
+    fsops::browse(q.path.as_deref().unwrap_or(""), q.hidden.unwrap_or(false), q.ext.as_deref()).map(Json).map_err(ApiError::bad)
 }
 
-async fn pick() -> ApiResult<serde_json::Value> {
-    let path = fsops::pick_folder().await.map_err(ApiError::bad)?;
+#[derive(Deserialize)]
+struct PickQuery {
+    file: Option<bool>,
+}
+
+async fn pick(Query(q): Query<PickQuery>) -> ApiResult<serde_json::Value> {
+    let path = fsops::pick_folder(q.file.unwrap_or(false)).await.map_err(ApiError::bad)?;
     Ok(Json(json!({ "path": path })))
 }
 

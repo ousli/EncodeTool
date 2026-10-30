@@ -6,6 +6,8 @@ export const store = $state({
   health: null,
   connected: false,
   snack: null,
+  form: { kind: 'encode', source: '', exportDir: '', lutId: '' },
+  lutForm: { name: '', path: '' },
 });
 
 let snackId = 0;
