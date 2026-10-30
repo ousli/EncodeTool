@@ -25,7 +25,7 @@ struct Assets;
 pub struct AppState {
     pub db: Arc<Db>,
     pub jobs: Arc<Manager>,
-    pub quit: Arc<tokio::sync::Notify>,
+    pub quit: &'static tokio::sync::Notify,
 }
 
 pub struct ApiError(StatusCode, String);
