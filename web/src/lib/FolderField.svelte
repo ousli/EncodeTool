@@ -1,5 +1,8 @@
 <script>
   import { api } from './api.js';
+  import Icon from './Icon.svelte';
+  import Dialog from './Dialog.svelte';
+  import { notify } from './store.svelte.js';
 
   let { label, value = $bindable(''), placeholder = '' } = $props();
   let open = $state(false);
@@ -30,70 +33,64 @@
       const { path } = await api.post('/api/fs/pick');
       if (path) value = path;
     } catch (e) {
-      error = e.message;
+      notify(e.message);
     }
   }
 </script>
 
-<label>
-  <span class="muted">{label}</span>
-  <div class="row">
+<div class="stack">
+  <label class="tf trailing" class:filled={value}>
     <input bind:value {placeholder} spellcheck="false" />
-    <button type="button" onclick={openBrowser}>Parcourir…</button>
-    <button type="button" onclick={pickNative} title="Dialogue macOS">Finder…</button>
-  </div>
-</label>
-{#if error && !open}<p class="error">{error}</p>{/if}
+    <span class="body-m">{label}</span>
+    <button type="button" class="icon-btn trail" aria-label="Parcourir les dossiers" onclick={openBrowser}>
+      <Icon name="folder_open" />
+    </button>
+  </label>
+  <div class="row"><button type="button" class="btn text" onclick={pickNative}>Choisir avec le Finder</button></div>
+</div>
 
-{#if open}
-  <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-  <div class="backdrop" onclick={() => (open = false)}>
-    <div class="modal card" onclick={(e) => e.stopPropagation()}>
-      <h2>Choisir un dossier</h2>
-      {#if browse}
-        <div class="row shortcuts">
-          {#each browse.shortcuts as s}
-            <button type="button" onclick={() => load(s.path)}>{s.name}</button>
-          {/each}
-        </div>
-        <div class="row path">
-          <button type="button" disabled={!browse.parent} onclick={() => load(browse.parent)}>↑</button>
+<Dialog bind:open title="Choisir un dossier">
+  {#if browse}
+    <div class="stack loose">
+      <div class="row wrap">
+        {#each browse.shortcuts as s}
+          <button type="button" class="chip clickable" onclick={() => load(s.path)}>{s.name}</button>
+        {/each}
+      </div>
+      <div class="row">
+        <button type="button" class="icon-btn" aria-label="Dossier parent" disabled={!browse.parent} onclick={() => load(browse.parent)}>
+          <Icon name="up" />
+        </button>
+        <label class="tf filled grow">
           <input value={browse.path} onkeydown={(e) => e.key === 'Enter' && load(e.currentTarget.value)} spellcheck="false" />
-        </div>
-        <ul>
-          {#each browse.dirs as d}
-            <li><button type="button" onclick={() => load(d.path)}>📁 {d.name}</button></li>
-          {:else}
-            <li class="muted">Aucun sous-dossier</li>
-          {/each}
-        </ul>
-        <div class="row">
-          <span class="muted">{browse.video_count} vidéo(s) dans ce dossier</span>
-          <span class="spacer"></span>
-          <button type="button" onclick={() => (open = false)}>Annuler</button>
-          <button type="button" class="primary" onclick={choose}>Choisir ce dossier</button>
-        </div>
-      {/if}
-      {#if error}<p class="error">{error}</p>{/if}
+          <span class="body-m">Chemin</span>
+        </label>
+      </div>
+      <ul class="list">
+        {#each browse.dirs as d (d.path)}
+          <li>
+            <button type="button" class="list-item action" onclick={() => load(d.path)}>
+              <span class="lead"><Icon name="folder" /></span>
+              <span class="content body-l">{d.name}</span>
+            </button>
+          </li>
+        {:else}
+          <li class="list-item"><span class="content body-m variant">Aucun sous-dossier</span></li>
+        {/each}
+      </ul>
+      <p class="body-s variant">{browse.video_count} vidéo(s) dans ce dossier</p>
     </div>
-  </div>
-{/if}
+  {/if}
+  {#if error}<p class="support err body-s">{error}</p>{/if}
+  {#snippet actions()}
+    <button type="button" class="btn text" onclick={() => (open = false)}>Annuler</button>
+    <button type="button" class="btn text" disabled={!browse} onclick={choose}>Choisir</button>
+  {/snippet}
+</Dialog>
 
 <style>
-  label { display: grid; gap: 4px; }
-  .row input { flex: 1; }
-  .backdrop {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.6);
-    display: grid;
-    place-items: center;
-    z-index: 10;
-  }
-  .modal { width: min(640px, 92vw); display: grid; gap: 10px; }
-  .shortcuts { flex-wrap: wrap; }
-  ul { list-style: none; margin: 0; padding: 0; max-height: 320px; overflow: auto; border: 1px solid var(--border); border-radius: 8px; }
-  li button { width: 100%; text-align: left; border: 0; border-radius: 0; background: none; }
-  li button:hover { background: var(--panel-2); }
-  li.muted { padding: 10px; }
+  .grow { flex: 1; min-width: 0; }
+  ul.list { max-height: 300px; overflow: auto; border-radius: var(--shape-m); }
+  .chip.clickable { cursor: pointer; border: 0; }
+  .chip.clickable:hover::before { opacity: 0.08; }
 </style>

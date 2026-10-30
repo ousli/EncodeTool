@@ -5,7 +5,13 @@ export const store = $state({
   luts: [],
   health: null,
   connected: false,
+  snack: null,
 });
+
+let snackId = 0;
+export function notify(text) {
+  store.snack = { id: ++snackId, text };
+}
 
 export async function refreshLuts() {
   store.luts = await api.get('/api/luts');

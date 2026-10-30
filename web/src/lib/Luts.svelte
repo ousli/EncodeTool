@@ -1,54 +1,71 @@
 <script>
   import { api } from './api.js';
-  import { store, refreshLuts } from './store.svelte.js';
+  import { store, refreshLuts, notify } from './store.svelte.js';
+  import Icon from './Icon.svelte';
 
   let name = $state('');
   let path = $state('');
-  let error = $state('');
 
   async function add(e) {
     e.preventDefault();
     try {
-      error = '';
       await api.post('/api/luts', { name, path });
       name = path = '';
       await refreshLuts();
+      notify('LUT ajoutée');
     } catch (err) {
-      error = err.message;
+      notify(err.message);
     }
   }
 
   async function remove(id) {
-    await api.del(`/api/luts/${id}`);
-    await refreshLuts();
+    try {
+      await api.del(`/api/luts/${id}`);
+      await refreshLuts();
+      notify('LUT supprimée');
+    } catch (err) {
+      notify(err.message);
+    }
   }
 </script>
 
-<form class="card" onsubmit={add}>
-  <h2>Ajouter une LUT</h2>
-  <div class="row">
-    <input bind:value={name} placeholder="Nom (ex. S-Log2)" />
-    <input bind:value={path} placeholder="/chemin/vers/fichier.cube" spellcheck="false" />
-    <button class="primary" disabled={!name || !path}>Ajouter</button>
-  </div>
-  {#if error}<p class="error">{error}</p>{/if}
-</form>
+<div class="stack loose">
+  <h1 class="headline-s-em page-title">LUT</h1>
 
-<div class="card">
-  <h2>LUT enregistrées</h2>
-  {#each store.luts as lut (lut.id)}
-    <div class="row item">
-      <strong>{lut.name}</strong>
-      <span class="muted mono path">{lut.path}</span>
-      <button class="danger" onclick={() => remove(lut.id)}>Supprimer</button>
+  <form class="card low stack loose" onsubmit={add}>
+    <h2 class="title-m-em">Ajouter une LUT</h2>
+    <label class="tf" class:filled={name}>
+      <input bind:value={name} placeholder="ex. S-Log2" />
+      <span class="body-m">Nom</span>
+    </label>
+    <label class="tf" class:filled={path}>
+      <input bind:value={path} placeholder="/chemin/vers/fichier.cube" spellcheck="false" />
+      <span class="body-m">Chemin du fichier .cube</span>
+    </label>
+    <div class="row">
+      <span class="spacer"></span>
+      <button class="btn filled icon-lead" disabled={!name || !path}><Icon name="add" />Ajouter</button>
     </div>
-  {:else}
-    <p class="muted">Aucune LUT enregistrée.</p>
-  {/each}
-</div>
+  </form>
 
-<style>
-  form { display: grid; gap: 10px; }
-  .item { padding: 8px 0; border-top: 1px solid var(--border); }
-  .path { flex: 1; font-size: 12px; overflow-wrap: anywhere; }
-</style>
+  <h2 class="title-m-em">LUT enregistrées</h2>
+  {#if store.luts.length}
+    <ul class="list">
+      {#each store.luts as lut (lut.id)}
+        <li class="list-item">
+          <span class="lead"><Icon name="tune" /></span>
+          <div class="content">
+            <p class="body-l">{lut.name}</p>
+            <p class="body-s variant mono">{lut.path}</p>
+          </div>
+          <button class="icon-btn" aria-label="Supprimer {lut.name}" onclick={() => remove(lut.id)}><Icon name="delete" /></button>
+        </li>
+      {/each}
+    </ul>
+  {:else}
+    <div class="empty">
+      <Icon name="tune" outline />
+      <p class="body-m">Aucune LUT enregistrée.</p>
+    </div>
+  {/if}
+</div>

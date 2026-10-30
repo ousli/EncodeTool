@@ -2,7 +2,7 @@
 
 **EncodeTool** is a local web app to automate batch video processing on macOS: renaming, H.265 10-bit encoding and LUT color grading, with live progress in your browser.
 
-A single Rust binary runs a small server on `127.0.0.1` and serves the web interface (Svelte) embedded in it. Everything stays on your machine: ffmpeg reads and writes your files directly.
+A single Rust binary runs a small server on `127.0.0.1` and serves the web interface (Svelte, Material 3 Expressive design: light/dark theme, navigation rail/bar, expressive motion) embedded in it. Everything stays on your machine: ffmpeg reads and writes your files directly.
 
 ## ✨ Features
 

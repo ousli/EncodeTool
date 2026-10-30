@@ -1,73 +1,69 @@
 <script>
   import { api } from './api.js';
-  import { KINDS, STATUS, formatEta, formatDate, formatDuration } from './store.svelte.js';
+  import { KINDS, STATUS, formatEta, formatDate, formatDuration, notify } from './store.svelte.js';
+  import Icon from './Icon.svelte';
+  import Progress from './Progress.svelte';
 
   let { job } = $props();
-  let error = $state('');
 
   const finished = $derived(['done', 'failed', 'cancelled'].includes(job.status));
   const live = $derived(['running', 'paused'].includes(job.status));
 
   async function act(action) {
     try {
-      error = '';
       if (action === 'remove') await api.del(`/api/jobs/${job.id}`);
       else await api.post(`/api/jobs/${job.id}/${action}`);
     } catch (e) {
-      error = e.message;
+      notify(e.message);
     }
   }
 </script>
 
-<div class="card job">
-  <div class="row">
-    <strong>{KINDS[job.kind]}{job.lut_name ? ` · ${job.lut_name}` : ''}</strong>
-    <span class="badge {job.status}">{STATUS[job.status]}</span>
-    <span class="spacer"></span>
-    {#if job.status === 'running'}<button onclick={() => act('pause')}>Pause</button>{/if}
-    {#if job.status === 'paused'}<button onclick={() => act('resume')}>Reprendre</button>{/if}
-    {#if !finished}<button class="danger" onclick={() => act('cancel')}>Annuler</button>{/if}
-    {#if finished}<button class="danger" onclick={() => act('remove')}>Supprimer</button>{/if}
+<article class="card stack loose" class:outlined={finished}>
+  <div class="row wrap">
+    <h3 class="title-m-em">{KINDS[job.kind]}{job.lut_name ? ` · ${job.lut_name}` : ''}</h3>
+    <span class="chip {job.status}">{#if job.status === 'done'}<Icon name="check" />{/if}{STATUS[job.status]}</span>
   </div>
-  <div class="muted mono path">{job.source}{job.export ? ` → ${job.export}` : ''}</div>
+  <p class="body-s variant mono path">{job.source}{job.export ? ` → ${job.export}` : ''}</p>
 
   {#if live}
-    <div class="file">{job.current_file} <span class="muted">({job.index}/{job.total})</span></div>
-    <div class="bar"><div style="width: {job.file_percent}%"></div></div>
-    <div class="stats muted">
-      <span>{Math.floor(job.file_percent)}%</span>
-      <span>ETA {formatEta(job.eta_secs)}</span>
-      <span>{job.fps != null ? `${job.fps} fps` : '-- fps'}</span>
-      <span>{job.bitrate ?? '--'}</span>
-      {#if job.speed}<span>{job.speed}×</span>{/if}
+    <div class="stack">
+      <p class="body-m file">{job.current_file} <span class="variant">({job.index}/{job.total})</span></p>
+      <Progress value={job.file_percent} wavy={job.status === 'running'} label="Fichier en cours" />
+      <div class="stats body-s variant">
+        <span>{Math.floor(job.file_percent)} %</span>
+        <span>ETA {formatEta(job.eta_secs)}</span>
+        <span>{job.fps != null ? `${job.fps} fps` : '-- fps'}</span>
+        <span>{job.bitrate ?? '--'}</span>
+        {#if job.speed}<span>{job.speed}×</span>{/if}
+      </div>
     </div>
-    <div class="bar total"><div style="width: {job.percent}%"></div></div>
-    <div class="stats muted"><span>Total {Math.floor(job.percent)}%</span></div>
+    <div class="stack">
+      <Progress value={job.percent} label="Progression totale" />
+      <p class="body-s variant">Total {Math.floor(job.percent)} %</p>
+    </div>
   {:else if finished}
-    <div class="stats muted">
+    <div class="stats body-s variant">
       <span>{job.done_files}/{job.total} fichier(s)</span>
       <span>{formatDate(job.finished_at)}</span>
       <span>{formatDuration(job)}</span>
     </div>
   {:else}
-    <div class="muted">En attente de son tour…</div>
+    <p class="body-m variant">En attente de son tour…</p>
   {/if}
-  {#if job.error}<pre class="error">{job.error}</pre>{/if}
-  {#if error}<p class="error">{error}</p>{/if}
-</div>
+  {#if job.error}<pre class="body-s err">{job.error}</pre>{/if}
+
+  <div class="row actions">
+    <span class="spacer"></span>
+    {#if job.status === 'running'}<button class="btn tonal icon-lead" onclick={() => act('pause')}><Icon name="pause" />Pause</button>{/if}
+    {#if job.status === 'paused'}<button class="btn tonal icon-lead" onclick={() => act('resume')}><Icon name="play" />Reprendre</button>{/if}
+    {#if !finished}<button class="btn text danger" onclick={() => act('cancel')}>Annuler</button>{/if}
+    {#if finished}<button class="btn text" onclick={() => act('remove')}>Supprimer</button>{/if}
+  </div>
+</article>
 
 <style>
-  .job { display: grid; gap: 8px; }
-  .path { font-size: 12px; overflow-wrap: anywhere; }
-  .badge { font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--panel-2); }
-  .badge.running { color: var(--accent); }
-  .badge.paused { color: var(--warn); }
-  .badge.done { color: var(--ok); }
-  .badge.failed { color: var(--err); }
-  .bar { height: 10px; background: var(--bg); border-radius: 999px; overflow: hidden; }
-  .bar div { height: 100%; background: var(--accent); transition: width 0.4s linear; }
-  .bar.total div { background: var(--ok); }
-  .stats { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; }
-  .file { overflow-wrap: anywhere; }
-  pre { margin: 0; white-space: pre-wrap; font-size: 12px; }
+  .path, .file { overflow-wrap: anywhere; }
+  .stats { display: flex; gap: 16px; flex-wrap: wrap; }
+  pre { margin: 0; white-space: pre-wrap; max-height: 160px; overflow: auto; padding: 12px; border-radius: var(--shape-s); background: var(--md-error-container); color: var(--md-on-error-container); font-family: var(--mono); }
 </style>
