@@ -3,3 +3,8 @@
 target/
 web/node_modules/
 web/dist/
+.env
+*.db
+*.db-*
+.vscode/
+.idea/
