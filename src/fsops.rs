@@ -133,7 +133,7 @@ pub fn browse(raw: &str, show_hidden: bool, ext: Option<&str>) -> Result<Browse,
     };
     files.sort_by_key(|d| d.name.to_lowercase());
     let home = home();
-    let shortcuts = [("Accueil", home.clone()), ("Bureau", format!("{home}/Desktop")), ("Films", format!("{home}/Movies")), ("Volumes", "/Volumes".into())]
+    let shortcuts = [("Accueil", home.clone()), ("Bureau", format!("{home}/Desktop")), ("Téléchargements", format!("{home}/Downloads")), ("Documents", format!("{home}/Documents")), ("Films", format!("{home}/Movies")), ("Volumes", "/Volumes".into())]
         .into_iter()
         .filter(|(_, p)| Path::new(p).is_dir())
         .map(|(name, path)| DirEntry { name: name.into(), path })
