@@ -27,8 +27,10 @@
 
 Before using the **Apply LUT** feature, you **MUST** edit the `EncodeTool.sh` file:
 1.  Open `EncodeTool.sh` in a text editor.
-2.  Locate `LUT_PATH='/path/to/your/LUT.cube'`.
-3.  Replace it with the absolute path to your `.cube` LUT file.
+2.  Locate the three variables `LUT_SLOG2`, `LUT_SLOG3` and `LUT_DLOGM` (e.g. `LUT_SLOG2="/path/to/your/S-Log2.cube"`).
+3.  Replace each placeholder with the absolute path to the matching `.cube` LUT file.
+
+Optionally, set `SOURCE_DIR` / `EXPORT_DIR` to skip the folder prompts.
 
 ## 🚀 Usage
 
@@ -42,7 +44,7 @@ Before using the **Apply LUT** feature, you **MUST** edit the `EncodeTool.sh` fi
     ```
 3.  Follow the interactive interface:
     *   Drag and drop your source folder.
-    *   Choose an action (Rename, Encode, Apply LUT...).
+    *   Choose an action (Rename, Reencode, Rename & Reencode, Apply LUT for S-Log2 / S-Log3 / DJI D-Log M).
     *   Enjoy the magic.
 
 ## 🧠 "Vibecoding" & Philosophy
