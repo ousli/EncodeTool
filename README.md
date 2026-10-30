@@ -29,11 +29,12 @@ A single Rust binary runs a small server on `127.0.0.1` and serves the web inter
 
 ## 🚀 Build and run
 
-Prebuilt Apple Silicon binaries are attached to each [GitHub release](../../releases) (`tar -xzf encodetool-*.tar.gz`; you may need `xattr -d com.apple.quarantine encodetool` since it is not signed). Or build it yourself:
+Download `EncodeTool-*.dmg` from the [latest release](../../releases/latest) (Apple Silicon), drag **EncodeTool** to Applications and open it: the interface opens in your browser, and *Quitter l'application* in the palette menu stops it. The app is not notarized, so on first launch right-click → Open (or run `xattr -dr com.apple.quarantine /Applications/EncodeTool.app`). Or build it yourself:
 
 ```bash
 ./build.sh                    # builds the web UI, then the Rust binary
 ./target/release/encodetool   # starts the server and opens the browser
+packaging/make-app.sh         # optional: wraps it into dist/EncodeTool.app and a .dmg
 ```
 
 Options: `--port 7878` (or `ENCODETOOL_PORT`), `--no-open`. Data (history, LUTs) lives in `~/Library/Application Support/EncodeTool` (override with `ENCODETOOL_DATA_DIR`).

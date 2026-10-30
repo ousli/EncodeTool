@@ -1,6 +1,6 @@
 [package]
 name = "encodetool"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 description = "Local web app to batch rename, encode (H.265 10-bit) and apply LUTs to videos"
 

@@ -25,6 +25,7 @@ struct Assets;
 pub struct AppState {
     pub db: Arc<Db>,
     pub jobs: Arc<Manager>,
+    pub quit: Arc<tokio::sync::Notify>,
 }
 
 pub struct ApiError(StatusCode, String);
@@ -73,6 +74,7 @@ async fn local_only(req: Request, next: Next) -> Response {
 pub fn router(state: AppState) -> Router {
     let api = Router::new()
         .route("/health", get(health))
+        .route("/quit", post(quit))
         .route("/jobs", get(list_jobs).post(create_job).delete(clear_jobs))
         .route("/jobs/:id", delete(remove_job))
         .route("/jobs/:id/cancel", post(cancel_job))
@@ -103,6 +105,11 @@ async fn static_file(uri: Uri) -> Response {
     };
     let mime = mime_guess::from_path(path).first_or_octet_stream();
     ([(header::CONTENT_TYPE, mime.as_ref().to_string())], file.data.into_owned()).into_response()
+}
+
+async fn quit(State(s): State<AppState>) -> StatusCode {
+    s.quit.notify_one();
+    StatusCode::NO_CONTENT
 }
 
 async fn health(State(s): State<AppState>) -> Json<serde_json::Value> {

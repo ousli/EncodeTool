@@ -1,8 +1,18 @@
 <script>
   import { theme, ACCENTS, isDark, toggleMode, setAccent } from './theme.svelte.js';
   import Icon from './Icon.svelte';
+  import { api } from './api.js';
 
   let open = $state(false);
+  let stopped = $state(false);
+
+  async function quit() {
+    open = false;
+    try {
+      await api.post('/api/quit', {});
+    } catch {}
+    stopped = true;
+  }
   const dark = $derived(isDark());
 
   function onwindow(e) {
@@ -30,11 +40,24 @@
           {#if theme.accent === a.id}<Icon name="check" />{/if}
         </button>
       {/each}
+      <div class="sep"></div>
+      <button role="menuitem" class="item" onclick={quit}>
+        <Icon name="power" />
+        <span class="body-m">Quitter l'application</span>
+      </button>
     </div>
   {/if}
 </div>
 
+{#if stopped}
+  <div class="stopped" role="alert">
+    <p class="headline-s-em">EncodeTool est arrêté</p>
+    <p class="body-m">Vous pouvez fermer cet onglet.</p>
+  </div>
+{/if}
+
 <style>
+  .stopped { position: fixed; inset: 0; z-index: 50; display: grid; place-content: center; gap: 8px; text-align: center; background: var(--md-surface); }
   .appearance { position: fixed; top: 12px; right: 12px; z-index: 20; }
   .menu {
     position: absolute;
