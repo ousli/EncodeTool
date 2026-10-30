@@ -1,49 +1,46 @@
 # 🎬 EncodeTool
 
-**EncodeTool** is a blazing fast and aesthetic CLI (Command Line Interface) utility to automate batch video processing on macOS. It is designed to simplify the workflow of content creators by handling renaming, encoding, and color grading in a single command.
+**EncodeTool** is a local web app to automate batch video processing on macOS: renaming, H.265 10-bit encoding and LUT color grading, with live progress in your browser.
+
+A single Rust binary runs a small server on `127.0.0.1` and serves the web interface (Svelte) embedded in it. Everything stays on your machine: ffmpeg reads and writes your files directly.
+
+## ✨ Features
+
+- **⚡️ H.265 10-bit encoding**: HEVC (Main10) with Apple Silicon hardware acceleration (VideoToolbox), `.mov` output.
+- **🎨 3D LUT**: apply S-Log2 / S-Log3 / D-Log M (or any `.cube`) LUTs while encoding. LUTs are managed from the interface.
+- **📅 Smart renaming**: prefixes files with their date (`YYYY-MM-DD_HHMM_`), also available combined with encoding.
+- **📊 Live task queue**: per-file and global progress, ETA, FPS, bitrate; pause, resume and cancel.
+- **🗂 History** of past tasks (kept between launches) and original creation/modification dates preserved on outputs.
+- **📁 Folder selection**: built-in browser, paste/drop a path, or the native macOS dialog.
+
+## 🛠 Prerequisites
+
+- macOS (Apple Silicon recommended).
+- `ffmpeg` and `ffprobe` with `hevc_videotoolbox` support (`brew install ffmpeg`).
+- Build only: Rust (`cargo`) and Node.js.
+
+## 🚀 Build and run
+
+```bash
+./build.sh                    # builds the web UI, then the Rust binary
+./target/release/encodetool   # starts the server and opens the browser
+```
+
+Options: `--port 7878` (or `ENCODETOOL_PORT`), `--no-open`. Data (history, LUTs) lives in `~/Library/Application Support/EncodeTool` (override with `ENCODETOOL_DATA_DIR`).
+
+## 🧑‍💻 Development
+
+```bash
+cargo test                          # backend unit tests
+cargo run -- --no-open              # API server on :7878
+cd web && npm install && npm run dev  # UI with hot reload (proxies /api to :7878)
+```
+
+## 🗃 Legacy script
+
+The original terminal tool, `EncodeTool.sh` (zsh), is still available. Edit the `LUT_SLOG2`, `LUT_SLOG3` and `LUT_DLOGM` variables (e.g. `LUT_SLOG2="/path/to/your/S-Log2.cube"`) to use the LUT action, then run `./EncodeTool.sh`.
 
 <div style="display: flex; justify-content: center; align-items: flex-start; gap: 10px;">
   <img src="image.png" alt="Terminal UI" style="max-width: 48%;">
   <img src="image2.png" alt="Additional UI Screenshot" style="max-width: 48%;">
 </div>
-
-## ✨ Features
-
-- **⚡️ H.265 10-bit Encoding**: Mass conversion to HEVC (Main10) codec using Apple Silicon hardware acceleration (VideoToolbox).
-- **🎨 3D LUT Application**: Native support for converting LOG profiles (e.g., S-Log2) to Rec.709 directly integrated into the encoding pipeline.
-- **📅 Smart Renaming**: Automatically adds the original creation date (metadata) to the filename for perfect chronological sorting.
-- **📊 "Premium" UI**:
-  - Smooth progress bar for the current file (with ETA, FPS, Bitrate).
-  - Persistent global progress bar for batch tracking.
-  - Automatic terminal cleanup ("Collapsing" display) for a clean history.
-
-## 🛠 Prerequisites
-
-- macOS (Optimized for Apple Silicon M1/M2/M3).
-- `ffmpeg` with `hevc_videotoolbox` support.
-- `zsh` (Default shell on macOS).
-
-## ⚙️ Configuration
-
-Before using the **Apply LUT** feature, you **MUST** edit the `EncodeTool.sh` file:
-
-1.  Open `EncodeTool.sh` in a text editor.
-2.  Locate the three variables `LUT_SLOG2`, `LUT_SLOG3` and `LUT_DLOGM` (e.g. `LUT_SLOG2="/path/to/your/S-Log2.cube"`).
-3.  Replace each placeholder with the absolute path to the matching `.cube` LUT file.
-
-Optionally, set `SOURCE_DIR` / `EXPORT_DIR` to skip the folder prompts.
-
-## 🚀 Usage
-
-1.  Navigate to the script directory:
-    ```bash
-    cd EncodeTool
-    ```
-2.  Run the script:
-    ```bash
-    ./EncodeTool.sh
-    ```
-3.  Follow the interactive interface:
-    - Drag and drop your source folder.
-    - Choose an action (Rename, Reencode, Rename & Reencode, Apply LUT for S-Log2 / S-Log3 / DJI D-Log M).
-    - Enjoy the magic.

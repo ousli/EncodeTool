@@ -1,2 +1,5 @@
 .DS_Store
 .github/
+target/
+web/node_modules/
+web/dist/
