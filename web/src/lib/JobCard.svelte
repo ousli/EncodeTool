@@ -8,7 +8,7 @@
 
   const finished = $derived(['done', 'failed', 'cancelled'].includes(job.status));
   const live = $derived(['running', 'paused'].includes(job.status));
-  const graded = $derived(job.kind === 'lut');
+  const graded = $derived(!!job.lut_name);
   const pct = $derived(Math.max(0, Math.min(100, job.file_percent)));
   let failed = $state(false);
   $effect(() => {

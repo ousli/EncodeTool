@@ -143,8 +143,10 @@ async fn create_job(State(s): State<AppState>, Json(body): Json<CreateJob>) -> A
         std::fs::create_dir_all(&dir).map_err(|e| ApiError::bad(format!("Dossier d'export invalide : {e}")))?;
         export = Some(dir);
     }
-    if body.kind == Kind::Lut {
-        let id = body.lut_id.ok_or_else(|| ApiError::bad("Choisissez une LUT"))?;
+    if body.kind == Kind::Lut && body.lut_id.is_none() {
+        return Err(ApiError::bad("Choisissez une LUT"));
+    }
+    if let (Some(id), true) = (body.lut_id, body.kind != Kind::Rename) {
         let lut = s.db.get_lut(id).ok().flatten().ok_or_else(|| ApiError::bad("LUT introuvable"))?;
         if !PathBuf::from(&lut.path).is_file() {
             return Err(ApiError::bad(format!("Fichier LUT introuvable : {}", lut.path)));

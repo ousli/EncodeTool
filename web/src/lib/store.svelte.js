@@ -6,7 +6,7 @@ export const store = $state({
   health: null,
   connected: false,
   snack: null,
-  form: { kind: 'encode', source: '', exportDir: '', lutId: '', keepMetadata: true },
+  form: { kind: 'encode', source: '', exportDir: '', rename: false, useLut: false, lutId: '', keepMetadata: true },
   lutForm: { name: '', path: '' },
 });
 
@@ -33,8 +33,11 @@ export const KINDS = {
   rename: 'Renommer',
   encode: 'Réencoder',
   rename_encode: 'Renommer + réencoder',
-  lut: 'Appliquer une LUT',
+  lut: 'Réencoder',
 };
+
+// Task kinds offered in the picker; the other options map to the backend kinds above.
+export const PICKER = { encode: 'Réencoder', rename: 'Renommer' };
 
 export const STATUS = {
   queued: 'En attente',
