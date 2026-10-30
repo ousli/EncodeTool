@@ -29,6 +29,28 @@ impl Tools {
         Some(Tools { ffmpeg, ffprobe, videotoolbox })
     }
 
+    /// One JPEG frame (480px wide) at `at` seconds, optionally graded with a LUT.
+    pub async fn thumbnail(&self, input: &Path, at: f64, lut: Option<&str>) -> Option<Vec<u8>> {
+        let mut vf = String::from("scale=480:-2");
+        if let Some(lut) = lut {
+            vf = format!("{vf},{}", lut_filter(lut));
+        }
+        vf.push_str(",format=yuvj420p");
+        let out = Command::new(&self.ffmpeg)
+            .args(["-hide_banner", "-loglevel", "error", "-nostdin", "-ss"])
+            .arg(format!("{at:.2}"))
+            .arg("-i")
+            .arg(input)
+            .args(["-an", "-frames:v", "1", "-vf"])
+            .arg(vf)
+            .args(["-c:v", "mjpeg", "-q:v", "4", "-f", "image2pipe", "pipe:1"])
+            .kill_on_drop(true)
+            .output()
+            .await
+            .ok()?;
+        (out.status.success() && !out.stdout.is_empty()).then_some(out.stdout)
+    }
+
     /// Media duration in seconds, 0.0 when unknown.
     pub async fn duration(&self, input: &Path) -> f64 {
         let Some(ffprobe) = &self.ffprobe else { return 0.0 };
@@ -66,6 +88,7 @@ pub struct EncodeParams<'a> {
     pub input: &'a Path,
     pub output: &'a Path,
     pub lut: Option<&'a str>,
+    pub keep_metadata: bool,
 }
 
 /// ffmpeg arguments for the H.265 10-bit (VideoToolbox) encode, with or without LUT.
@@ -82,6 +105,12 @@ pub fn encode_args(p: &EncodeParams) -> Vec<String> {
     } else {
         "65"
     };
+    let metadata: &[&str] = if p.keep_metadata {
+        &["-map_metadata", "0"]
+    } else {
+        &["-map_metadata", "-1", "-map_chapters", "-1", "-fflags", "+bitexact", "-flags:v", "+bitexact", "-flags:a", "+bitexact"]
+    };
+    args.extend(metadata.iter().map(|s| s.to_string()));
     for a in [
         "-c:v", "hevc_videotoolbox", "-profile:v", "main10", "-pix_fmt", "p010le", "-q:v", quality, "-tag:v",
         "hvc1", "-c:a", "aac", "-b:a", "192k", "-f", "mov", "-progress", "pipe:1", "-nostats",
@@ -140,6 +169,15 @@ impl Progress {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn strips_metadata_only_when_asked() {
+        let (i, o) = (Path::new("a.mp4"), Path::new("b.mov"));
+        let keep = encode_args(&EncodeParams { input: i, output: o, lut: None, keep_metadata: true });
+        let strip = encode_args(&EncodeParams { input: i, output: o, lut: None, keep_metadata: false });
+        assert!(keep.windows(2).any(|w| w == ["-map_metadata", "0"]));
+        assert!(strip.windows(2).any(|w| w == ["-map_metadata", "-1"]));
+    }
 
     #[test]
     fn parses_progress_block() {

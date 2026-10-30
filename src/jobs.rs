@@ -4,7 +4,8 @@ use crate::fsops;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
-use std::sync::atomic::{AtomicI64, Ordering};
+use std::collections::HashMap;
+use std::sync::atomic::{AtomicBool, AtomicI64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use tokio::io::{AsyncBufReadExt, AsyncReadExt, BufReader};
@@ -45,6 +46,8 @@ pub struct Job {
     pub export: Option<String>,
     pub lut_name: Option<String>,
     pub lut_path: Option<String>,
+    #[serde(default = "yes")]
+    pub keep_metadata: bool,
     pub status: Status,
     pub total: usize,
     pub index: usize,
@@ -60,6 +63,13 @@ pub struct Job {
     pub created_at: i64,
     pub started_at: Option<i64>,
     pub finished_at: Option<i64>,
+    /// Bumped each time new preview frames are available (0 = none).
+    #[serde(default)]
+    pub thumb_v: u32,
+}
+
+fn yes() -> bool {
+    true
 }
 
 pub struct NewJob {
@@ -68,6 +78,7 @@ pub struct NewJob {
     pub export: Option<String>,
     pub lut_name: Option<String>,
     pub lut_path: Option<String>,
+    pub keep_metadata: bool,
 }
 
 struct RunCtl {
@@ -90,6 +101,8 @@ pub struct Manager {
     ctl: Mutex<Option<RunCtl>>,
     changed: broadcast::Sender<()>,
     wake: Notify,
+    thumbs: Mutex<HashMap<i64, (Vec<u8>, Option<Vec<u8>>)>>,
+    shutting_down: AtomicBool,
 }
 
 fn now() -> i64 {
@@ -143,6 +156,8 @@ impl Manager {
             ctl: Mutex::new(None),
             changed: broadcast::channel(64).0,
             wake: Notify::new(),
+            thumbs: Mutex::new(HashMap::new()),
+            shutting_down: AtomicBool::new(false),
         })
     }
 
@@ -166,6 +181,7 @@ impl Manager {
             export: new.export,
             lut_name: new.lut_name,
             lut_path: new.lut_path,
+            keep_metadata: new.keep_metadata,
             status: Status::Queued,
             total: 0,
             index: 0,
@@ -181,6 +197,7 @@ impl Manager {
             created_at: now(),
             started_at: None,
             finished_at: None,
+            thumb_v: 0,
         };
         self.db.save_job(&job);
         self.jobs.lock().unwrap().push(job.clone());
@@ -287,6 +304,30 @@ impl Manager {
         let _ = self.changed.send(());
     }
 
+    /// Preview frames of the running job: `lut = false` is the original frame.
+    pub fn thumb(&self, id: i64, lut: bool) -> Option<Vec<u8>> {
+        let thumbs = self.thumbs.lock().unwrap();
+        let (orig, graded) = thumbs.get(&id)?;
+        if lut { graded.clone() } else { Some(orig.clone()) }
+    }
+
+    /// Stops the running ffmpeg (removing its partial file) and prevents new jobs from starting.
+    pub async fn shutdown(&self) {
+        self.shutting_down.store(true, Ordering::SeqCst);
+        if let Some(ctl) = self.ctl.lock().unwrap().as_mut() {
+            ctl.cancel = true;
+            if let Some(pid) = ctl.pid {
+                signal(pid, libc::SIGKILL);
+            }
+        }
+        for _ in 0..30 {
+            if self.ctl.lock().unwrap().is_none() {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
+    }
+
     /// Runs queued jobs one at a time, forever.
     pub async fn worker(self: Arc<Self>) {
         loop {
@@ -298,6 +339,9 @@ impl Manager {
     }
 
     fn take_next(&self) -> Option<Job> {
+        if self.shutting_down.load(Ordering::SeqCst) {
+            return None;
+        }
         let job = {
             let mut jobs = self.jobs.lock().unwrap();
             let job = jobs.iter_mut().find(|j| j.status == Status::Queued)?;
@@ -333,6 +377,7 @@ impl Manager {
             j.speed = None;
             j.current_file = None;
         });
+        self.thumbs.lock().unwrap().remove(&id);
         *self.ctl.lock().unwrap() = None;
         self.persist(id);
     }
@@ -402,7 +447,8 @@ impl Manager {
         }
         let partial = export.join(format!(".{}.part", output.file_name().unwrap().to_string_lossy()));
         let duration = tools.duration(file).await;
-        let args = encode_args(&EncodeParams { input: file, output: &partial, lut: job.lut_path.as_deref() });
+        self.make_thumbs(job, tools, file, duration).await;
+        let args = encode_args(&EncodeParams { input: file, output: &partial, lut: job.lut_path.as_deref(), keep_metadata: job.keep_metadata });
         let result = self.run_ffmpeg(job.id, tools, &args, duration, idx, total).await;
         match result {
             Ok(()) => {
@@ -413,6 +459,27 @@ impl Manager {
             Err(e) => {
                 let _ = std::fs::remove_file(&partial);
                 Err(e)
+            }
+        }
+    }
+
+    async fn make_thumbs(&self, job: &Job, tools: &Tools, file: &Path, duration: f64) {
+        let at = duration * 0.1;
+        let lut = job.lut_path.as_deref();
+        let (orig, graded) = tokio::join!(tools.thumbnail(file, at, None), async {
+            match lut {
+                Some(l) => tools.thumbnail(file, at, Some(l)).await,
+                None => None,
+            }
+        });
+        let id = job.id;
+        match orig {
+            Some(orig) => {
+                self.thumbs.lock().unwrap().insert(id, (orig, graded));
+                self.update(id, |j| j.thumb_v += 1);
+            }
+            None => {
+                self.thumbs.lock().unwrap().remove(&id);
             }
         }
     }

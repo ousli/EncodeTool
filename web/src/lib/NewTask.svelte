@@ -25,6 +25,7 @@
         kind: form.kind,
         source: form.source,
         export: needsExport && form.exportDir ? form.exportDir : null,
+        keep_metadata: form.keepMetadata,
         lut_id: form.kind === 'lut' ? Number(form.lutId) || null : null,
       });
       notify('Tâche ajoutée à la file');
@@ -56,6 +57,15 @@
     <FolderField label="Dossier source" bind:value={form.source} placeholder="/Users/…/Rushes" />
     {#if needsExport}
       <FolderField label="Dossier d'export" bind:value={form.exportDir} placeholder="vide = source/export" />
+    {/if}
+    {#if needsExport}
+      <label class="switch-row">
+        <span class="stack">
+          <span class="body-l">Conserver les métadonnées</span>
+          <span class="body-s variant">EXIF, date, GPS, appareil… copiés dans la vidéo exportée.</span>
+        </span>
+        <input type="checkbox" role="switch" class="switch" bind:checked={form.keepMetadata} />
+      </label>
     {/if}
     {#if form.kind === 'lut'}
       <div>

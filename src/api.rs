@@ -78,6 +78,7 @@ pub fn router(state: AppState) -> Router {
         .route("/jobs/:id/cancel", post(cancel_job))
         .route("/jobs/:id/pause", post(pause_job))
         .route("/jobs/:id/resume", post(resume_job))
+        .route("/jobs/:id/thumb/:which", get(job_thumb))
         .route("/events", get(events))
         .route("/luts", get(list_luts).post(add_lut))
         .route("/luts/:id", delete(delete_lut))
@@ -123,6 +124,7 @@ struct CreateJob {
     source: String,
     export: Option<String>,
     lut_id: Option<i64>,
+    keep_metadata: Option<bool>,
 }
 
 async fn create_job(State(s): State<AppState>, Json(body): Json<CreateJob>) -> ApiResult<Job> {
@@ -150,7 +152,14 @@ async fn create_job(State(s): State<AppState>, Json(body): Json<CreateJob>) -> A
         lut_name = Some(lut.name);
         lut_path = Some(lut.path);
     }
-    Ok(Json(s.jobs.enqueue(NewJob { kind: body.kind, source, export, lut_name, lut_path })))
+    Ok(Json(s.jobs.enqueue(NewJob { kind: body.kind, source, export, lut_name, lut_path, keep_metadata: body.keep_metadata.unwrap_or(true) })))
+}
+
+async fn job_thumb(State(s): State<AppState>, Path((id, which)): Path<(i64, String)>) -> Response {
+    match s.jobs.thumb(id, which == "lut") {
+        Some(bytes) => ([(header::CONTENT_TYPE, "image/jpeg"), (header::CACHE_CONTROL, "no-store")], bytes).into_response(),
+        None => StatusCode::NOT_FOUND.into_response(),
+    }
 }
 
 async fn cancel_job(State(s): State<AppState>, Path(id): Path<i64>) -> ApiResult<serde_json::Value> {

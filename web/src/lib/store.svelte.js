@@ -6,7 +6,7 @@ export const store = $state({
   health: null,
   connected: false,
   snack: null,
-  form: { kind: 'encode', source: '', exportDir: '', lutId: '' },
+  form: { kind: 'encode', source: '', exportDir: '', lutId: '', keepMetadata: true },
   lutForm: { name: '', path: '' },
 });
 

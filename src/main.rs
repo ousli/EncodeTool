@@ -36,7 +36,7 @@ async fn main() {
     let jobs = jobs::Manager::new(db.clone(), tools);
     tokio::spawn(jobs.clone().worker());
 
-    let app = api::router(api::AppState { db, jobs });
+    let app = api::router(api::AppState { db, jobs: jobs.clone() });
     let mut listener = None;
     for p in port..port.saturating_add(10) {
         if let Ok(l) = tokio::net::TcpListener::bind(("127.0.0.1", p)).await {
@@ -50,10 +50,12 @@ async fn main() {
     if !no_open {
         let _ = std::process::Command::new("open").arg(&url).spawn();
     }
-    axum::serve(listener, app)
-        .with_graceful_shutdown(async {
-            let _ = tokio::signal::ctrl_c().await;
-        })
-        .await
-        .unwrap();
+    // Long-lived SSE connections would block a graceful shutdown, so stop ffmpeg and exit directly.
+    tokio::select! {
+        res = axum::serve(listener, app) => res.unwrap(),
+        _ = tokio::signal::ctrl_c() => {
+            println!("\nArrêt en cours…");
+            jobs.shutdown().await;
+        }
+    }
 }
