@@ -29,6 +29,8 @@ A single Rust binary runs a small server on `127.0.0.1` and serves the web inter
 
 ## 🚀 Build and run
 
+Prebuilt Apple Silicon binaries are attached to each [GitHub release](../../releases) (`tar -xzf encodetool-*.tar.gz`; you may need `xattr -d com.apple.quarantine encodetool` since it is not signed). Or build it yourself:
+
 ```bash
 ./build.sh                    # builds the web UI, then the Rust binary
 ./target/release/encodetool   # starts the server and opens the browser
